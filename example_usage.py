@@ -1,50 +1,145 @@
-# In your Jupyter Notebook cell
+# examples.py
+# Demonstrates key use cases of the OllamaChat library when pulled into a notebook or script.
 
 from ollama_chat import OllamaChat
 
-# 1. Initialize the manager
-chat = OllamaChat(model='deepseek-r1:7b') # Or your preferred model
 
-# 2. List available sessions (optional)
-sessions = chat.list_sessions()
-print("Available sessions:", sessions)
+def example_new_session():
+    """
+    Start a new session with a system prompt and send a question.
+    """
+    chat = OllamaChat(
+        model='deepseek-coder:7b',
+        project_name='notebook-demo',
+        visual_mode='plain'
+    )
+    chat.start_new_session(
+        system_prompt="You are a data-science mentor who explains things first-principles style.",
+        session_name="binary-search-deep-dive"
+    )
+    response = chat.send("Walk me through how binary search works.")
+    print("AI:", response)
 
-# 3. Option A: Start a new session with context
-print("\n--- Starting New Chat ---")
-my_system_prompt = "You are a helpful Python programming assistant. You focus on clear explanations and code examples."
-chat.start_new_session(system_prompt=my_system_prompt)
 
-# 4. Option B: Load an existing session
-# print("\n--- Loading Chat ---")
-# if sessions:
-#     chat.load_session(sessions[0]) # Load the most recent one
-# else:
-#     print("No sessions to load, starting new.")
-#     chat.start_new_session()
+def example_load_and_resume():
+    """
+    Load and resume an existing session.
+    """
+    chat = OllamaChat(
+        project_name='notebook-demo',
+        visual_mode='plain'
+    )
+    if chat.load_session("binary-search-deep-dive.json"):
+        reply = chat.send("What’s the worst-case time complexity again?")
+        print("AI:", reply)
 
-# 5. Add more context programmatically (optional)
-chat.add_message('user', "Here's a piece of code I'm working on: `def example(): pass`", save=True)
-chat.add_message('assistant', "Okay, I see that basic function definition. What would you like to do with it?", save=True)
 
-# 6. Send messages programmatically and get responses
-print("\n--- Sending a Message ---")
-question = "How can I add a docstring to that function?"
-response = chat.send(question, stream_print=False) # Set stream_print=False if you just want the return value
+def example_inject_context():
+    """
+    Add text or file context to the session.
+    """
+    chat = OllamaChat(
+        project_name='notebook-demo',
+        visual_mode='plain'
+    )
+    chat.load_session("binary-search-deep-dive.json")
+    # Add inline context
+    chat.add_context(
+        "Quick-Sort Note",
+        "Quick-sort on average runs in O(n log n) time by picking a pivot and partitioning..."
+    )
+    # Or add from a file
+    # chat.add_file_context("research/algorithm_notes.txt", title="Algorithm Notes")
+    response = chat.send("Compare binary search and quick-sort given the new context.")
+    print("AI:", response)
 
-print(f"\nUser: {question}")
-print(f"AI: {response}")
 
-# 7. Send another message
-question_2 = "Show me an example."
-response_2 = chat.send(question_2, stream_print=False)
+def example_search_and_extract():
+    """
+    Search past messages and extract code blocks from the last response.
+    """
+    chat = OllamaChat(
+        project_name='notebook-demo',
+        visual_mode='plain'
+    )
+    chat.load_session("binary-search-deep-dive.json")
+    results = chat.search_messages("binary search")
+    print("Search Results:", results)
 
-print(f"\nUser: {question_2}")
-print(f"AI: {response_2}")
+    code_blocks = chat.extract_code_blocks()
+    print("Code Blocks:", code_blocks)
 
-# 8. You can access the full history anytime
-print("\n--- Full History ---")
-for msg in chat.messages:
-    print(f"- {msg['role']}: {msg['content']}")
 
-# 9. You can even start the interactive loop from the notebook (though less common)
-# chat.start_chat_loop()
+def example_stats_and_history():
+    """
+    Retrieve and print session statistics and recent history.
+    """
+    chat = OllamaChat(
+        project_name='notebook-demo',
+        visual_mode='plain'
+    )
+    chat.load_session("binary-search-deep-dive.json")
+    stats = chat.get_session_stats()
+    print("Session Stats:", stats)
+    # Display last 5 messages in console
+    chat.display_history(limit=5)
+
+
+def example_export_markdown():
+    """
+    Export the full conversation to a Markdown file.
+    """
+    chat = OllamaChat(
+        project_name='notebook-demo',
+        visual_mode='plain'
+    )
+    chat.load_session("binary-search-deep-dive.json")
+    markdown = chat.to_markdown()
+    output_path = "binary_search_session.md"
+    with open(output_path, "w") as f:
+        f.write(markdown)
+    print(f"Exported conversation to {output_path}")
+
+
+def example_silent_batch():
+    """
+    Run batch queries in silent mode (no live output).
+    """
+    chat = OllamaChat(
+        project_name='batch-runs',
+        visual_mode='silent'
+    )
+    chat.start_new_session(session_name="batch-queries")
+    queries = ["Explain PCA", "Give me pseudocode for k-means"]
+    answers = [chat.send(q) for q in queries]
+    print("Batch answers:", answers)
+
+
+def example_interactive_loop():
+    """
+    Simple REPL loop driven by input(); type 'quit' to exit.
+    """
+    chat = OllamaChat(
+        project_name='notebook-demo',
+        visual_mode='plain'
+    )
+    chat.start_new_session(session_name="interactive-loop")
+    print("Starting interactive loop. Type 'quit' to exit.")
+    while True:
+        user_q = input("You ▶ ")
+        if user_q.lower() in ('quit', 'exit'):
+            break
+        ai_response = chat.send(user_q)
+        print(f"AI ▶ {ai_response}\n")
+
+
+if __name__ == "__main__":
+    example_new_session()
+    example_load_and_resume()
+    example_inject_context()
+    example_search_and_extract()
+    example_stats_and_history()
+    example_export_markdown()
+    example_silent_batch()
+    # Uncomment to run the interactive loop example:
+    # example_interactive_loop()
