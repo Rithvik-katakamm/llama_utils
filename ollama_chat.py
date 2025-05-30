@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from typing import List, Dict, Optional, Union
 import time
+from transformers import AutoTokenizer
 
 # Rich library for enhanced console output
 try:
@@ -631,6 +632,18 @@ class OllamaChat:
             markdown_lines.append(f"{msg['content']}\n")
         
         return '\n'.join(markdown_lines)
+    
+    def token_counts(text):
+        # Load the DeepSeek-R1 tokenizer
+        tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-R1")
+
+        # Tokenize the input text
+        tokens = tokenizer.encode(text, add_special_tokens=False)
+
+        # Count the number of tokens
+        token_count = len(tokens)
+
+        return token_count
 
 # Main application (enhanced)
 def main():
