@@ -633,6 +633,7 @@ class OllamaChat:
         
         return '\n'.join(markdown_lines)
     
+    @staticmethod
     def token_counts(text):
         # Load the DeepSeek-R1 tokenizer
         tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-R1")
